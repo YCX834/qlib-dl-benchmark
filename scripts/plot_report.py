@@ -41,12 +41,26 @@ LABELS = {
     "lightgbm_alpha158": "LightGBM (Alpha158)",
     "lstm_alpha360": "LSTM (Alpha360)",
     "transformer_alpha360": "Transformer (Alpha360)",
+    "lstm_alpha360_small": "LSTM 小容量 (消融)",
+    "transformer_alpha360_tuned": "Transformer 调优版 (消融)",
 }
 COLORS = {
     "lightgbm_alpha158": "#2E5EAA",
     "lstm_alpha360": "#D9822B",
     "transformer_alpha360": "#3A9E6E",
+    "lstm_alpha360_small": "#8FB8DE",
+    "transformer_alpha360_tuned": "#A8D5BA",
 }
+# 消融实验用虚线，主线用实线
+ABLATION = {"lstm_alpha360_small", "transformer_alpha360_tuned"}
+
+
+def _style(e):
+    """按实验类型返回 (标签, 颜色, 线型, 线宽)。"""
+    name = e["experiment"]
+    ls = "--" if name in ABLATION else "-"
+    lw = 1.3 if name in ABLATION else 1.7
+    return LABELS.get(name, name), COLORS.get(name), ls, lw
 
 
 def load_experiments():
@@ -80,45 +94,43 @@ def save(fig, name):
 
 
 def fig_cumulative(exps):
-    fig, ax = plt.subplots(figsize=(11, 5.5))
+    fig, ax = plt.subplots(figsize=(12, 6))
     for e in exps:
         nav = e.get("nav")
         if nav is None or len(nav) == 0:
             continue
-        name = e["experiment"]
-        ax.plot(nav.index, nav.values,
-                label=LABELS.get(name, name), color=COLORS.get(name),
-                linewidth=1.6)
+        lab, col, ls, lw = _style(e)
+        ax.plot(nav.index, nav.values, label=lab, color=col,
+                linewidth=lw, linestyle=ls, alpha=0.9 if ls == "-" else 0.75)
     # 基准
     for e in exps:
         b = e.get("bench_nav")
         if b is not None and len(b):
             ax.plot(b.index, b.values, label="沪深300 基准",
-                    color="#888888", linewidth=1.4, linestyle="--")
+                    color="#888888", linewidth=1.4, linestyle=":")
             break
-    ax.set_title("累计净值对比（测试期 2017-01 ~ 2020-08，含交易成本）",
-                 fontsize=13, pad=12)
+    ax.set_title("累计净值对比（测试期 2017-01 ~ 2020-08，含交易成本）\n"
+                 "虚线 = 消融实验", fontsize=13, pad=12)
     ax.set_ylabel("净值（初始 = 1.0）")
     ax.set_xlabel("")
-    ax.legend(frameon=False, loc="upper left")
+    ax.legend(frameon=False, loc="upper left", fontsize=9)
     ax.grid(alpha=0.25, linestyle=":")
     ax.axhline(1.0, color="#ccc", linewidth=0.8)
     save(fig, "fig1_cumulative_return.png")
 
 
 def fig_drawdown(exps):
-    fig, ax = plt.subplots(figsize=(11, 4.5))
+    fig, ax = plt.subplots(figsize=(12, 4.8))
     for e in exps:
         dd = e.get("drawdown")
         if dd is None or len(dd) == 0:
             continue
-        name = e["experiment"]
-        ax.plot(dd.index, dd.values * 100,
-                label=LABELS.get(name, name), color=COLORS.get(name),
-                linewidth=1.4)
+        lab, col, ls, lw = _style(e)
+        ax.plot(dd.index, dd.values * 100, label=lab, color=col,
+                linewidth=lw, linestyle=ls, alpha=0.9 if ls == "-" else 0.75)
     ax.set_title("回撤曲线（测试期）", fontsize=13, pad=12)
     ax.set_ylabel("回撤 (%)")
-    ax.legend(frameon=False, loc="lower left")
+    ax.legend(frameon=False, loc="lower left", fontsize=9)
     ax.grid(alpha=0.25, linestyle=":")
     save(fig, "fig2_drawdown.png")
 
@@ -133,20 +145,33 @@ def fig_regime(exps):
             "model": LABELS.get(e["experiment"], e["experiment"]),
             "高波动期": e.get("high_vol_annual_return"),
             "低波动期": e.get("low_vol_annual_return"),
+            "_ablation": e["experiment"] in ABLATION,
         })
     if not rows:
         return
     df = pd.DataFrame(rows).set_index("model")
-    fig, ax = plt.subplots(figsize=(9, 5))
-    df.plot(kind="bar", ax=ax, color=["#D9822B", "#4A90D9"], width=0.6)
-    ax.set_title("不同市场环境下的年化收益（按基准60日波动率三分位切分）",
-                 fontsize=13, pad=12)
+    abl = df["_ablation"]
+    df = df.drop(columns=["_ablation"])
+
+    fig, ax = plt.subplots(figsize=(11, 5.4))
+    df.plot(kind="bar", ax=ax, color=["#D9822B", "#4A90D9"], width=0.62)
+    # 消融实验加斜线纹理区分。
+    # 注意：pandas 的 bar patch 顺序是「按列分组」（第 0 列所有 bar，再第 1 列所有 bar），
+    # 所以 patch 下标是 j * n_rows + i，不是 i * n_cols + j。
+    n = len(df)
+    for i, (name, row) in enumerate(df.iterrows()):
+        if abl.iloc[i]:
+            for j in range(len(df.columns)):
+                ax.patches[j * n + i].set_hatch("//")
+                ax.patches[j * n + i].set_alpha(0.55)
+    ax.set_title("不同市场环境下的年化收益（按基准60日波动率三分位切分）\n"
+                 "斜纹 = 消融实验", fontsize=13, pad=12)
     ax.set_ylabel("年化收益 (%)")
     ax.set_xlabel("模型")
-    ax.axhline(0, color="#888", linewidth=0.8)
+    ax.axhline(0, color="#888", linewidth=0.9)
     ax.legend(frameon=False, title="市场环境")
     ax.grid(alpha=0.25, axis="y", linestyle=":")
-    plt.setp(ax.get_xticklabels(), rotation=0)
+    plt.setp(ax.get_xticklabels(), rotation=12, ha="right", fontsize=9)
     save(fig, "fig3_regime.png")
 
 
