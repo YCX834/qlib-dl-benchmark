@@ -1,0 +1,120 @@
+# ============================================================================
+# Transformer 消融实验：验证「落后不是因为没调好」
+#
+# 背景
+# ----
+# 主实验中 Transformer 的 IC 只有 0.0117（LSTM 的 1/4），年化跑输基准 4.6 个点。
+# 读者最自然的质疑是：**「你 Transformer 是不是没调好？」**
+#
+# 本配置针对该质疑做三件事：
+#   1. 提高学习率（1e-4 → 5e-4）—— 主实验的 lr 相当保守
+#   2. 放宽容忍（early_stop 5 → 30）—— 避免训练刚起步就被停掉
+#   3. 增大 batch（2048 → 800，与 LSTM 对齐）并减少模型容量
+#      （d_model 64 → 32, nhead 2 → 2, layers 2 → 1）—— 降低过拟合风险
+#
+# 若调优后 Transformer 仍显著落后，说明瓶颈是**架构 + 数据量约束**，
+# 而非调参 —— 这才是有价值的结论。
+# ============================================================================
+
+qlib_init:
+    provider_uri: "~/.qlib/qlib_data/cn_data"
+    region: cn
+
+market: &market csi300
+benchmark: &benchmark SH000300
+
+data_handler_config: &data_handler_config
+    start_time: 2008-01-01
+    end_time: 2020-08-01
+    fit_start_time: 2008-01-01
+    fit_end_time: 2014-12-31
+    instruments: *market
+    infer_processors:
+        - class: RobustZScoreNorm
+          kwargs:
+              fields_group: feature
+              clip_outlier: true
+        - class: Fillna
+          kwargs:
+              fields_group: feature
+    learn_processors:
+        - class: DropnaLabel
+        - class: CSRankNorm
+          kwargs:
+              fields_group: label
+    label: ["Ref($close, -2) / Ref($close, -1) - 1"]
+
+port_analysis_config: &port_analysis_config
+    executor:
+        class: SimulatorExecutor
+        module_path: qlib.backtest.executor
+        kwargs:
+            time_per_step: day
+            generate_portfolio_metrics: True
+    strategy:
+        class: TopkDropoutStrategy
+        module_path: qlib.contrib.strategy
+        kwargs:
+            signal: <PRED>
+            topk: 50
+            n_drop: 5
+    backtest:
+        start_time: 2017-01-01
+        end_time: 2020-08-01
+        account: 100000000
+        benchmark: *benchmark
+        exchange_kwargs:
+            freq: day
+            limit_threshold: 0.095
+            deal_price: close
+            open_cost: 0.0005
+            close_cost: 0.0015
+            min_cost: 5
+
+task:
+    model:
+        class: TransformerModel
+        module_path: qlib.contrib.model.pytorch_transformer
+        kwargs:
+            d_feat: 6
+            d_model: 32            # 主实验 64 → 32，降低容量
+            nhead: 2
+            num_layers: 1          # 主实验 2 → 1，降低容量
+            dropout: 0.1           # 主实验 0.0 → 0.1，加正则
+            n_epochs: 300          # 主实验 100 → 300
+            lr: 5.0e-4             # 主实验 1e-4 → 5e-4
+            early_stop: 30         # 主实验 5 → 30，放宽容忍
+            batch_size: 800        # 主实验 2048 → 800，与 LSTM 对齐
+            metric: ""
+            loss: mse
+            optimizer: adam
+            reg: 1.0e-3
+            GPU: 0
+            seed: 0
+    dataset:
+        class: DatasetH
+        module_path: qlib.data.dataset
+        kwargs:
+            handler:
+                class: Alpha360
+                module_path: qlib.contrib.data.handler
+                kwargs: *data_handler_config
+            segments:
+                train: [2008-01-01, 2014-12-31]
+                valid: [2015-01-01, 2016-12-31]
+                test: [2017-01-01, 2020-08-01]
+    record:
+        - class: SignalRecord
+          module_path: qlib.workflow.record_temp
+          kwargs:
+            model: <MODEL>
+            dataset: <DATASET>
+        - class: SigAnaRecord
+          module_path: qlib.workflow.record_temp
+          kwargs:
+            ana_long_short: False
+            ann_scaler: 252
+        - class: PortAnaRecord
+          module_path: qlib.workflow.record_temp
+          kwargs:
+            config: *port_analysis_config

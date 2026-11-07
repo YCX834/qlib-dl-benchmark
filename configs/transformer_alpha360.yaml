@@ -1,0 +1,119 @@
+# ============================================================================
+# Transformer（Alpha360 时序特征）—— 深度学习对照组
+#
+# 与 Qlib 官方 examples/benchmarks/Transformer/workflow_config_transformer_Alpha360.yaml
+# 一致（官方配置只写了 d_feat 和 seed，其余用 pytorch_transformer.py 的默认值，
+# 这里把默认值显式写出，方便读者核对）。
+#
+# 与 LSTM 的对比点：
+#   LSTM      递归结构，按时间步顺序累积状态 —— 严格因果，但对长依赖路径弱
+#   Transformer 自注意力，全局直接建模任意两点依赖 —— 路径更短
+#   在 60 步的窗口内，两者差异有限；这本身就是值得观察的实验结论。
+#
+# ⚠️ 注意：官方默认 lr=1e-4、batch_size=2048、early_stop=5，
+#    与 LSTM 的 lr=1e-3 / batch_size=800 / early_stop=20 差别很大。
+#    这里保持官方原样，不做"公平化"调整 —— 记录在 README 的实验设置表里。
+# ============================================================================
+
+qlib_init:
+    provider_uri: "~/.qlib/qlib_data/cn_data"
+    region: cn
+
+market: &market csi300
+benchmark: &benchmark SH000300
+
+data_handler_config: &data_handler_config
+    start_time: 2008-01-01
+    end_time: 2020-08-01
+    fit_start_time: 2008-01-01
+    fit_end_time: 2014-12-31
+    instruments: *market
+    infer_processors:
+        - class: RobustZScoreNorm
+          kwargs:
+              fields_group: feature
+              clip_outlier: true
+        - class: Fillna
+          kwargs:
+              fields_group: feature
+    learn_processors:
+        - class: DropnaLabel
+        - class: CSRankNorm
+          kwargs:
+              fields_group: label
+    label: ["Ref($close, -2) / Ref($close, -1) - 1"]
+
+port_analysis_config: &port_analysis_config
+    executor:
+        class: SimulatorExecutor
+        module_path: qlib.backtest.executor
+        kwargs:
+            time_per_step: day
+            generate_portfolio_metrics: True
+    strategy:
+        class: TopkDropoutStrategy
+        module_path: qlib.contrib.strategy
+        kwargs:
+            signal: <PRED>
+            topk: 50
+            n_drop: 5
+    backtest:
+        start_time: 2017-01-01
+        end_time: 2020-08-01
+        account: 100000000
+        benchmark: *benchmark
+        exchange_kwargs:
+            freq: day
+            limit_threshold: 0.095
+            deal_price: close
+            open_cost: 0.0005
+            close_cost: 0.0015
+            min_cost: 5
+
+task:
+    model:
+        class: TransformerModel
+        module_path: qlib.contrib.model.pytorch_transformer
+        kwargs:
+            d_feat: 6                # Alpha360 的 6 个基础字段
+            d_model: 64
+            nhead: 2
+            num_layers: 2
+            dropout: 0.0
+            n_epochs: 100
+            lr: 1.0e-4
+            early_stop: 5
+            batch_size: 2048
+            metric: ""
+            loss: mse
+            optimizer: adam
+            reg: 1.0e-3
+            GPU: 0
+            seed: 0
+    dataset:
+        class: DatasetH
+        module_path: qlib.data.dataset
+        kwargs:
+            handler:
+                class: Alpha360
+                module_path: qlib.contrib.data.handler
+                kwargs: *data_handler_config
+            segments:
+                train: [2008-01-01, 2014-12-31]
+                valid: [2015-01-01, 2016-12-31]
+                test: [2017-01-01, 2020-08-01]
+    record:
+        - class: SignalRecord
+          module_path: qlib.workflow.record_temp
+          kwargs:
+            model: <MODEL>
+            dataset: <DATASET>
+        - class: SigAnaRecord
+          module_path: qlib.workflow.record_temp
+          kwargs:
+            ana_long_short: False
+            ann_scaler: 252
+        - class: PortAnaRecord
+          module_path: qlib.workflow.record_temp
+          kwargs:
+            config: *port_analysis_config

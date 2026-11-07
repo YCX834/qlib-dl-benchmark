@@ -1,0 +1,40 @@
+# ============================================================================
+# 依赖清单
+#
+# 版本说明（都是实测跑通的组合）：
+#   qlib 0.9.7   —— PyPI 最新版；已包含 pytorch_lstm / pytorch_transformer 等
+#                   全部深度学习模型，无需从源码安装
+#   numpy 2.4.6  —— qlib 0.9.7 要求 numpy>=1.19；2.x 与 pandas 3.x 兼容
+#   torch 2.14.1+cu130 —— CUDA 12.x/13.0 运行时由 Windows wheel 自带，
+#                   不需要额外装 nvidia-* 包
+#   cvxpy 1.9.3  —— qlib 的组合优化依赖
+#   pyarrow 26.0 —— qlib 的列存格式支持
+#
+# ⚠️ 本机注意事项：
+#   - 若在中文用户名的 Windows 上运行，joblib 的 MemmappingPool 会因
+#     resource_tracker 对路径做 ASCII 编码而崩溃。Qlib 的数据加载默认用
+#     multiprocessing 后端，Windows 上每个 worker 重新 init 会极慢。
+#     已在 sitecustomize.py 中设 JOBLIB_TEMP_FOLDER，并把 qlib 的
+#     joblib_backend 改为 threading。见 README「环境说明」。
+#   - mlflow >= 3.18 默认禁用文件存储后端，需设 MLFLOW_ALLOW_FILE_STORE=true
+# ============================================================================
+
+pyqlib==0.9.7
+numpy>=2.0,<3.0
+pandas>=2.0
+scipy>=1.11
+pyarrow>=15.0
+cvxpy>=1.4
+lightgbm>=4.0
+mlflow>=2.9
+matplotlib>=3.7
+seaborn>=0.12
+tqdm
+pyyaml
+joblib
+
+# 深度学习模型（LSTM / Transformer）需要
+# Windows / Linux 用 CUDA 版：
+torch>=2.0
+# CPU 版（若无 GPU）：
+# torch --index-url https://download.pytorch.org/whl/cpu

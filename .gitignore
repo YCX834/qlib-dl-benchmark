@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# qlib 运行产物
+mlruns/
+results/*/curves.pkl
+results/*/predictions.pkl
+results/*/report.pkl
+*.log
+
+# qlib 官方 examples 快照（含大量二进制与重复内容）
+qlib_src/examples/**/__pycache__/
+qlib_src/examples/**/*.pkl
+qlib_src/examples/**/*.ipynb
+
+# 环境
+.venv/
+env/
+.env
