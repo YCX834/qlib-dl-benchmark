@@ -2,7 +2,7 @@
   "experiment": "lstm_alpha360",
   "model_class": "LSTM",
   "handler": "Alpha360",
-  "elapsed_sec": 272.0,
+  "elapsed_sec": 270.9,
   "qlib_excess_no_cost_annual_return": 0.004518,
   "qlib_excess_annual_return": 0.004517,
   "mlflow_ic": 0.045179,

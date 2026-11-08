@@ -2,7 +2,7 @@
   "experiment": "transformer_alpha360",
   "model_class": "TransformerModel",
   "handler": "Alpha360",
-  "elapsed_sec": 925.7,
+  "elapsed_sec": 925.3,
   "qlib_excess_no_cost_annual_return": 0.005284,
   "qlib_excess_annual_return": 0.005283,
   "mlflow_ic": 0.01171,

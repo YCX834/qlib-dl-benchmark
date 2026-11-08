@@ -33,7 +33,7 @@ for cand in ["Microsoft YaHei", "SimHei", "DengXian"]:
         matplotlib.font_manager.findfont(cand, fallback_to_default=False)
         plt.rcParams["font.sans-serif"] = [cand]
         break
-    except Exception:
+    except (ValueError, RuntimeError):
         continue
 plt.rcParams["axes.unicode_minus"] = False
 
@@ -159,7 +159,7 @@ def fig_regime(exps):
     # 注意：pandas 的 bar patch 顺序是「按列分组」（第 0 列所有 bar，再第 1 列所有 bar），
     # 所以 patch 下标是 j * n_rows + i，不是 i * n_cols + j。
     n = len(df)
-    for i, (name, row) in enumerate(df.iterrows()):
+    for i in range(len(df)):
         if abl.iloc[i]:
             for j in range(len(df.columns)):
                 ax.patches[j * n + i].set_hatch("//")

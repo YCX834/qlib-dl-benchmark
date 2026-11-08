@@ -27,7 +27,6 @@ import argparse
 import json
 import os
 import pickle
-import sys
 import time
 
 import numpy as np
@@ -166,14 +165,14 @@ def run_experiment(cfg: dict, tag: str = "", force: bool = False) -> dict:
         pred = _load_artifact(root, "pred.pkl")
         with open(os.path.join(out_dir, "predictions.pkl"), "wb") as f:
             pickle.dump(pred, f)
-    except Exception as e:
+    except (OSError, pickle.PickleError) as e:
         print("[warn] 保存预测失败: %s" % str(e)[:80])
     try:
         root = _artifact_root(recorder)
         pa = _load_artifact(root, "report_normal")
         with open(os.path.join(out_dir, "report.pkl"), "wb") as f:
             pickle.dump(pa, f)
-    except Exception as e:
+    except (OSError, pickle.PickleError) as e:
         print("[warn] 保存报告失败: %s" % str(e)[:80])
 
     print_metrics(metrics)

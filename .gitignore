@@ -20,3 +20,22 @@ qlib_src/examples/**/*.ipynb
 .venv/
 env/
 .env
+
+# PyCharm
+# 保留 .idea/runConfigurations/ —— 运行配置可共享，克隆下来就能一键运行
+# 忽略 IDE 本地状态（每人不同，且含机器相关路径）
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/shelf/
+.idea/tasks.xml
+.idea/compiler.xml
+.idea/inspectionProfiles/
+.idea/dictionaries/
+.idea/modules.xml
+.idea/*.iml
+*.iws
+
+# PyCharm 误建目录（idea.properties 路径被解析成相对路径时的产物）
+pycharm_dataconfig/
+pycharm_datalog/
+pycharm_datasystem/

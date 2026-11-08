@@ -54,7 +54,6 @@ def main():
         with open(cfg_path, "r", encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
 
-        rec = client.get_run(run.info.run_id)
         # 用一个轻量包装，让 collect_metrics 能拿到 run_id
         class _Rec:
             id = run.info.run_id

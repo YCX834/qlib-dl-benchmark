@@ -462,11 +462,56 @@ qlib-dl-benchmark/
 │   ├── figures/                  # README 引用的图
 │   └── <实验名>/                 # 每个实验的原始产物
 ├── qlib_src/examples/            # Qlib 官方 examples 快照（对照用）
+├── .idea/                        # PyCharm 配置（8 个预置运行配置，克隆即用）
 ├── docs/
 │   ├── analysis.md               # 详细分析
-│   └── model_comparison.md       # 模型对比详表
+│   ├── model_comparison.md       # 模型对比详表
+│   └── PYCHARM.md                # PyCharm 使用说明（环境/运行配置/常见问题）
 └── README.md
 ```
+
+---
+
+## 🚀 快速开始
+
+### 方式一：PyCharm（推荐，配置已预置）
+
+项目里已有 **8 个运行配置**，打开后在右上角下拉框直接选 ▶ 即可。
+
+```cmd
+conda activate qlib
+cd /d %USERPROFILE%\Desktop\qlib-dl-benchmark
+pycharm64 .
+```
+
+> **想快速看结果（不重训）**：依次跑 `Refresh metrics (no retrain)` → `Plot report (figures)`，
+> 就能拿到全部指标和 5 张图。
+
+详见 **[docs/PYCHARM.md](docs/PYCHARM.md)**。
+
+### 方式二：命令行
+
+```cmd
+conda activate qlib
+cd /d %USERPROFILE%\Desktop\qlib-dl-benchmark
+
+REM 跑单个实验
+python scripts\run_experiment.py --config configs\lightgbm_alpha158.yaml
+
+REM 从已有实验重建指标（不重训）+ 出图 + 汇总
+python scripts\refresh_metrics.py lightgbm_alpha158 lstm_alpha360 transformer_alpha360
+python scripts\plot_report.py
+python scripts\collect_metrics.py --markdown
+```
+
+### 环境要求
+
+| 项目 | 值 |
+|---|---|
+| Python | 3.11（qlib 环境） |
+| 核心依赖 | `qlib 0.9.7` · `torch 2.14.1` · `lightgbm 4.7` · `mlflow` · `pandas` · `matplotlib` |
+| qlib 数据 | `%USERPROFILE%\.qlib\qlib_data\cn_data`（4368 只 / 1999-11 ~ 2022-12） |
+| 显卡 | 深度学习实验需要（Transformer 训练约 15 分钟） |
 
 ---
 

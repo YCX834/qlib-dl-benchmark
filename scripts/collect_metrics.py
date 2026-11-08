@@ -54,7 +54,7 @@ def load_all() -> pd.DataFrame:
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
-    if "experiment" in df:
+    if "experiment" in df.columns:
         df["_rank"] = df["experiment"].apply(
             lambda x: ORDER.index(x) if x in ORDER else 999)
         df = df.sort_values("_rank").drop(columns="_rank")
