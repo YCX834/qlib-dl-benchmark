@@ -32,13 +32,17 @@ cd /d %USERPROFILE%\Desktop\qlib-dl-benchmark
 pycharm64 .
 ```
 
-**方式 B：桌面启动器**
+**方式 B：桌面启动器（最省事）**
 
-双击 `打开 Anaconda 终端 (Qlib).bat`，然后在打开的终端里敲 `pycharm64 .`
+双击桌面上的 **`打开 PyCharm (量化项目).bat`** —— 它会自动设置
+`PYCHARM_PROPERTIES`（绕开中文路径问题）并直接打开本项目。
 
 **方式 C：直接双击项目目录**
 
 在文件资源管理器里进入 `qlib-dl-benchmark` 文件夹 → 右键 → `打开方式` → PyCharm。
+
+> ⚠️ 如果 PyCharm 启动时卡在"获取目录锁失败"，请改用方式 B——
+> 那是中文用户名路径导致 JVM 解码乱码造成的（见 Q4）。
 
 ---
 
