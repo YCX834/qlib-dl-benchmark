@@ -516,7 +516,7 @@ python scripts\collect_metrics.py --markdown
 
 ---
 
-## 📄 License
+## License
 
 代码部分采用 MIT License。`qlib_src/` 下为 Microsoft Qlib 官方代码快照，
 遵循其原 LICENSE（MIT）。
