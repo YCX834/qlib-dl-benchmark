@@ -1,6 +1,6 @@
 # 树模型 vs 深度学习：A 股量化实证对比
 
-> 用 [Microsoft Qlib](https://github.com/microsoft/qlib) 官方框架，在**严格控制变量**的前提下，  
+> 用 [Microsoft Qlib](https://github.com/microsoft/qlib) 官方框架，在严格控制变量**的前提下，  
 > 对比 LightGBM（梯度提升树）与 LSTM / Transformer（深度学习）在 A 股沪深300 上的量化表现。
 >
 > 🔬 **这是一个可复现的实验仓库** —— 所有数字都由 `scripts/` 下的脚本跑出，  
